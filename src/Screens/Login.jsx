@@ -35,6 +35,8 @@ export default function Login() {
                     email: "",
                     password: "",
                 });
+                localStorage.setItem("authToken",data.authToken);
+                console.log(localStorage.getItem());
                 navigate("/");
                 
             } else {

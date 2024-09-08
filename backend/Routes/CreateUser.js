@@ -3,6 +3,9 @@ const router = express.Router();
 
 const { body , validationResult} = require("express-validator");
 const User = require("../models/User");
+const bcrypt = require('bcrypt');
+const jwt = require("json-web-token");
+const jwtSecret = "MyNameIsEndToEndTouTuneChannel";
 router.post("/createuser",
   [
     body("name").notEmpty().withMessage("Name is required"),
@@ -11,6 +14,8 @@ router.post("/createuser",
     body("location").notEmpty().withMessage("Location is required")
   ]
   , async (req, res) => {
+    const salt = await bcrypt.genSalt(10);
+    let setPassword = await bcrypt.hash(req.body.password,salt);
   try {
 
     const errors= validationResult(req);
@@ -18,12 +23,10 @@ router.post("/createuser",
       return res.status(400).json({ errors: errors.array() });
     }
 
-
-
     await User.create({
       name: req.body.name,
       email: req.body.email,
-      password: req.body.password,
+      password: setPassword,
       location: req.body.location
     });
     res.json({ success: true,
@@ -57,15 +60,24 @@ router.post("/loginuser",
 
        });
      }
-     if(req.body.password === userData){
-       return res.json({success: true,
-         message: "Login successful", 
-         data: userData});
+
+     const pasCompare = await bcrypt.compare(req.body.password,userData.password);
+     if(!pasCompare){
+       return res.status(400).json({
+        errors:"try with correct credentials."
+       });
      }
+     const data = {
+      user : {
+      }
+     }
+     const autToken = jwt.sign(data,jwtSecret);
+      
       res.json({ 
       success: true,
       data: userData ,
-      
+      authToken:autToken
+        
      });
   } catch (error) {
     console.log(error);
